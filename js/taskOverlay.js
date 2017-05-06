@@ -51,14 +51,19 @@ function createTaskOverlayTabElement (tab, task) {
   })
 }
 
-function addTabCloseButton (tabContainer, taskTabElement) {
+function addTabCloseButton (task, tab) {
+  // It would probably be easier if these two variables were passed as parameters 
+  var tabsContainer = getTaskContainer(task).querySelector('.task-tabs-container'),
+      tabElement = tabsContainer.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', tab)) // extract as function
+
   var closeTabButton = document.createElement('button')
   closeTabButton.innerHTML = '✕'
   closeTabButton.className = 'closeTab'
 
+
   closeTabButton.addEventListener('click', function (e) {
-    closeTab(taskTabElement.getAttribute('data-tab'))
-    tabContainer.removeChild(taskTabElement)
+    closeTab(tab)
+    tabsContainer.removeChild(tabElement)
 
     // do not close taskOverlay
     // (the close button is part of the tab-element, so a click on it
@@ -66,7 +71,7 @@ function addTabCloseButton (tabContainer, taskTabElement) {
     e.stopImmediatePropagation()
   })
 
-  taskTabElement.querySelector('.title').appendChild(closeTabButton)
+  tabElement.querySelector('.title').appendChild(closeTabButton)
 }
 
 var TaskOverlayBuilder = {
@@ -121,7 +126,7 @@ var TaskOverlayBuilder = {
       return taskActionContainer
     },
 
-    tabElement: function (tabContainer, task, tab) {
+    tabElement: function (task, tab) {
       var el = createTaskOverlayTabElement(tab, task)
 
       el.setAttribute('data-tab', tab.id)
@@ -134,7 +139,7 @@ var TaskOverlayBuilder = {
         taskOverlay.hide()
       })
 
-      addTabCloseButton(tabContainer, el)
+      addTabCloseButton(task, el)
       return el
     },
 
@@ -144,7 +149,7 @@ var TaskOverlayBuilder = {
 
       if (task.tabs) {
         for (var i = 0; i < task.tabs.length; i++) {
-          var el = this.tabElement(tabContainer, task, task.tabs[i])
+          var el = this.tabElement(task, task.tabs[i])
           tabContainer.appendChild(el)
         }
       }
