@@ -113,7 +113,7 @@ ipc.on('goForward', function () {
   } catch (e) { }
 })
 
-function defineShortcut (keyMapName, fn) {
+function defineShortcut (keyMap, keyMapName, fn) {
   Mousetrap.bind(keyMap[keyMapName], function (e, combo) {
     // mod+left and mod+right are also text editing shortcuts, so they should not run when an input field is focused
     if (combo === 'mod+left' || combo === 'mod+right') {
@@ -130,19 +130,19 @@ function defineShortcut (keyMapName, fn) {
 }
 
 settings.get('keyMap', function (keyMapSettings) {
-  keyMap = userKeyMap(keyMapSettings)
+  var keyMap = userKeyMap(keyMapSettings)
 
   var Mousetrap = require('mousetrap')
 
   window.Mousetrap = Mousetrap
-  defineShortcut('addPrivateTab', addPrivateTab)
+  defineShortcut(keyMap, 'addPrivateTab', addPrivateTab)
 
-  defineShortcut('enterEditMode', function (e) {
+  defineShortcut(keyMap, 'enterEditMode', function (e) {
     enterEditMode(tabs.getSelected())
     return false
   })
 
-  defineShortcut('closeTab', function (e) {
+  defineShortcut(keyMap, 'closeTab', function (e) {
     // prevent mod+w from closing the window
     e.preventDefault()
     e.stopImmediatePropagation()
@@ -152,7 +152,7 @@ settings.get('keyMap', function (keyMapSettings) {
     return false
   })
 
-  defineShortcut('addToFavorites', function (e) {
+  defineShortcut(keyMap, 'addToFavorites', function (e) {
     bookmarks.handleStarClick(getTabElement(tabs.getSelected()).querySelector('.bookmarks-button'))
     enterEditMode(tabs.getSelected()) // we need to show the bookmarks button, which is only visible in edit mode
   })
@@ -179,11 +179,11 @@ settings.get('keyMap', function (keyMapSettings) {
     })(i)
   }
 
-  defineShortcut('gotoLastTab', function (e) {
+  defineShortcut(keyMap, 'gotoLastTab', function (e) {
     switchToTab(tabs.getAtIndex(tabs.count() - 1).id)
   })
 
-  defineShortcut('gotoFirstTab', function (e) {
+  defineShortcut(keyMap, 'gotoFirstTab', function (e) {
     switchToTab(tabs.getAtIndex(0).id)
   })
 
@@ -194,7 +194,7 @@ settings.get('keyMap', function (keyMapSettings) {
     getWebview(tabs.getSelected()).focus()
   })
 
-  defineShortcut('toggleReaderView', function () {
+  defineShortcut(keyMap, 'toggleReaderView', function () {
     var tab = tabs.get(tabs.getSelected())
 
     if (tab.isReaderView) {
@@ -206,15 +206,15 @@ settings.get('keyMap', function (keyMapSettings) {
 
   // TODO add help docs for this
 
-  defineShortcut('goBack', function (d) {
+  defineShortcut(keyMap, 'goBack', function (d) {
     getWebview(tabs.getSelected()).goBack()
   })
 
-  defineShortcut('goForward', function (d) {
+  defineShortcut(keyMap, 'goForward', function (d) {
     getWebview(tabs.getSelected()).goForward()
   })
 
-  defineShortcut('switchToPreviousTab', function (d) {
+  defineShortcut(keyMap, 'switchToPreviousTab', function (d) {
     var currentIndex = tabs.getIndex(tabs.getSelected())
     var previousTab = tabs.getAtIndex(currentIndex - 1)
 
@@ -225,7 +225,7 @@ settings.get('keyMap', function (keyMapSettings) {
     }
   })
 
-  defineShortcut('switchToNextTab', function (d) {
+  defineShortcut(keyMap, 'switchToNextTab', function (d) {
     var currentIndex = tabs.getIndex(tabs.getSelected())
     var nextTab = tabs.getAtIndex(currentIndex + 1)
 
@@ -236,7 +236,7 @@ settings.get('keyMap', function (keyMapSettings) {
     }
   })
 
-  defineShortcut('closeAllTabs', function (d) { // destroys all current tabs, and creates a new, empty tab. Kind of like creating a new window, except the old window disappears.
+  defineShortcut(keyMap, 'closeAllTabs', function (d) { // destroys all current tabs, and creates a new, empty tab. Kind of like creating a new window, except the old window disappears.
     var tset = tabs.get()
     for (var i = 0; i < tset.length; i++) {
       destroyTab(tset[i].id)
@@ -245,7 +245,7 @@ settings.get('keyMap', function (keyMapSettings) {
     addTab() // create a new, blank tab
   })
 
-  defineShortcut('toggleTasks', function () {
+  defineShortcut(keyMap, 'toggleTasks', function () {
     if (taskOverlay.isShown) {
       taskOverlay.hide()
     } else {
@@ -255,7 +255,7 @@ settings.get('keyMap', function (keyMapSettings) {
 
   var lastReload = 0
 
-  defineShortcut('reload', function () {
+  defineShortcut(keyMap, 'reload', function () {
     var time = Date.now()
 
     // pressing mod+r twice in a row reloads the whole browser
@@ -273,7 +273,7 @@ settings.get('keyMap', function (keyMapSettings) {
   })
 
   // mod+enter navigates to searchbar URL + ".com"
-  defineShortcut('completeSearchbar', function () {
+  defineShortcut(keyMap, 'completeSearchbar', function () {
     if (currentSearchbarInput) { // if the searchbar is open
       var value = currentSearchbarInput.value
 
@@ -288,7 +288,7 @@ settings.get('keyMap', function (keyMapSettings) {
     }
   })
 
-  defineShortcut('showAndHideMenuBar', function () {
+  defineShortcut(keyMap, 'showAndHideMenuBar', function () {
     toggleMenuBar()
   })
 }) // end settings.get
