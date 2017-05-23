@@ -153,9 +153,7 @@ settings.get('keyMap', function (keyMapSettings) {
       removeTaskFromOverlay(tabs.getSelected().id, getSelectedTask())
 
       setTimeout(function(){
-        currentTabElement = document.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', currentTask.tabs.getSelected()))
-
-        console.log(currentTabElement, currentTask.tabs,  currentTask.tabs.getSelected());
+        var currentTabElement = document.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', currentTask.tabs.getSelected()))
 
         if (currentTabElement) {
           currentTabElement.scrollIntoViewIfNeeded()
