@@ -148,18 +148,11 @@ settings.get('keyMap', function (keyMapSettings) {
     e.stopImmediatePropagation()
 
     if(taskOverlay.isShown) {
-      var currentTabElement = document.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', currentTask.tabs.getSelected()))
-      currentTabElement.parentNode.removeChild(currentTabElement)
+      var currentTabElement = taskOverlay.currentTabElement.get()
+      taskOverlay.currentTabElement.remove()
       removeTaskFromOverlay(tabs.getSelected().id, getSelectedTask())
 
-      setTimeout(function(){
-        var currentTabElement = document.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', currentTask.tabs.getSelected()))
-
-        if (currentTabElement) {
-          currentTabElement.scrollIntoViewIfNeeded()
-          currentTabElement.classList.add('fakefocus')
-        }
-      }, 10)
+      setTimeout(function(){ taskOverlay.currentTabElement.focus() }, 10)
     }
 
     closeTab(tabs.getSelected())

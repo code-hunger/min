@@ -51,12 +51,7 @@ var taskOverlay = {
 
     // scroll to the selected element and focus it
 
-    var currentTabElement = document.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', currentTask.tabs.getSelected()))
-
-    if (currentTabElement) {
-      currentTabElement.scrollIntoViewIfNeeded()
-      currentTabElement.classList.add('fakefocus')
-    }
+    this.currentTabElement.focus()
 
     // un-hide the overlay
     this.overlayElement.hidden = false
@@ -95,6 +90,25 @@ var taskOverlay = {
       this.hide()
     } else {
       this.show()
+    }
+  },
+
+  currentTabElement: {
+    get: function () {
+      return document.querySelector('.task-tab-item[data-tab="{id}"]'.replace('{id}', currentTask.tabs.getSelected()))
+    },
+
+    focus: function () {
+      var el = this.get()
+      if(el) {
+        el.scrollIntoViewIfNeeded()
+        el.classList.add('fakefocus')
+      }
+    },
+
+    remove: function () {
+      var el = this.get()
+      el.parentNode.removeChild(el)
     }
   }
 }
