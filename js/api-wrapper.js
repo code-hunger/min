@@ -121,4 +121,8 @@ function switchToTab (id, options) {
   }, 2500)
 
   sessionRestore.save()
+
+  if(taskOverlay.isShown) {
+    taskOverlay.currentTabElement.focus()
+  }
 }

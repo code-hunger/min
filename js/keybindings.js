@@ -230,7 +230,6 @@ settings.get('keyMap', function (keyMapSettings) {
     } else {
       switchToTab(tabs.getAtIndex(tabs.count() - 1).id)
     }
-    taskOverlay.currentTabElement.focus()
   })
 
   defineShortcut('switchToNextTab', function (d) {
@@ -242,7 +241,6 @@ settings.get('keyMap', function (keyMapSettings) {
     } else {
       switchToTab(tabs.getAtIndex(0).id)
     }
-    taskOverlay.currentTabElement.focus()
   })
 
   defineShortcut('closeAllTabs', function (d) { // destroys all current tabs, and creates a new, empty tab. Kind of like creating a new window, except the old window disappears.
