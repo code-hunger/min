@@ -99,6 +99,9 @@ var taskOverlay = {
     },
 
     focus: function () {
+      var currentlyFocused = document.getElementsByClassName('fakefocus')[0]
+      if(currentlyFocused) currentlyFocused.classList.remove('fakefocus')
+
       var el = this.get()
       if(el) {
         el.scrollIntoViewIfNeeded()
