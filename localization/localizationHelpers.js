@@ -1,7 +1,7 @@
 /* provides helper functions for using localized strings */
 
 /*
-translations are compiled into here by running "npm run buildTranslations" in this format
+translations are compiled into here by running "npm run build" in this format
 
 var languages = {
     en-US: {name: "English (United States), identifier: "en-US", translations: {...}}
@@ -10,7 +10,7 @@ var languages = {
 */
 
 function getCurrentLanguage () {
-    // TODO add a setting to change the language to something other than the default
+  // TODO add a setting to change the language to something other than the default
 
   var language = 'en-US' // default
 
@@ -45,6 +45,7 @@ function l (stringId) {
 
 /* for static HTML pages
 insert a localized string into all elements with a [data-string] attribute
+set the correct attributes for all elements with a [data-label] attribute
  */
 
 if (typeof document !== 'undefined') {
@@ -56,4 +57,18 @@ if (typeof document !== 'undefined') {
       el.innerHTML = str.unsafeHTML
     }
   })
+  document.querySelectorAll('[data-label]').forEach(function (el) {
+    var str = l(el.getAttribute('data-label'))
+    if (typeof str === 'string') {
+      el.setAttribute('title', str)
+      el.setAttribute('aria-label', str)
+    } else {
+      throw new Error('invalid data-label value: ' + str)
+    }
+  })
+}
+if (typeof window !== 'undefined') {
+  window.l = l
+  window.userLanguage = userLanguage
+  window.getCurrentLanguage = getCurrentLanguage
 }

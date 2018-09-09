@@ -1,8 +1,12 @@
 /* common actions that affect different parts of the UI (webviews, tabstrip, etc) */
 
+var urlParser = require('util/urlParser.js')
+var focusMode = require('focusMode.js')
+var tabActivity = require('navbar/tabActivity.js')
+
 /* loads a page in a webview */
 
-function navigate (tabId, newURL) {
+window.navigate = function (tabId, newURL) {
   newURL = urlParser.parse(newURL)
 
   tabs.update(tabId, {
@@ -31,33 +35,23 @@ function addTask () {
 function addTab (tabId, options) {
   /*
   options
-
-    options.focus - whether to enter editing mode when the tab is created. Defaults to true.
+    options.enterEditMode - whether to enter editing mode when the tab is created. Defaults to true.
     options.openInBackground - whether to open the tab without switching to it. Defaults to false.
-    options.leaveEditMode - whether to hide the searchbar when creating the tab
   */
   options = options || {}
-
-  if (options.leaveEditMode !== false) {
-    tabBar.leaveEditMode() // if a tab is in edit-mode, we want to exit it
-  }
 
   tabId = tabId || tabs.add()
 
   tabBar.addTab(tabId)
   webviews.add(tabId)
 
-  // open in background - we don't want to enter edit mode or switch to tab
-
-  if (options.openInBackground) {
-    return
-  }
-
-  switchToTab(tabId, {
-    focusWebview: false
-  })
-  if (options.enterEditMode !== false) {
-    tabBar.enterEditMode(tabId)
+  if (!options.openInBackground) {
+    switchToTab(tabId, {
+      focusWebview: options.enterEditMode === false
+    })
+    if (options.enterEditMode !== false) {
+      tabBar.enterEditMode(tabId)
+    }
   }
 }
 
@@ -111,8 +105,8 @@ function closeTask (taskId) {
 /* destroys a tab, and either switches to the next tab or creates a new one */
 function closeTab (tabId) {
   /* disabled in focus mode */
-  if (isFocusMode) {
-    showFocusModeError()
+  if (focusMode.enabled()) {
+    focusMode.warn()
     return
   }
 
@@ -164,8 +158,8 @@ function switchToTab (id, options) {
   options = options || {}
 
   /* tab switching disabled in focus mode */
-  if (isFocusMode) {
-    showFocusModeError()
+  if (focusMode.enabled()) {
+    focusMode.warn()
     return
   }
 
@@ -181,11 +175,9 @@ function switchToTab (id, options) {
 
   tabs.setSelected(id)
   tabBar.setActiveTab(id)
-  webviews.setSelected(id)
-
-  if (options.focusWebview !== false) {
-    webviews.get(id).focus()
-  }
+  webviews.setSelected(id, {
+    focus: options.focusWebview !== false
+  })
 
   updateColorPalette()
 
@@ -193,3 +185,5 @@ function switchToTab (id, options) {
 
   tabActivity.refresh()
 }
+
+module.exports = {navigate, addTask, addTab, destroyTask, destroyTab, closeTask, closeTab, switchToTask, switchToTab}

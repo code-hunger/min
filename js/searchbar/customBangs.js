@@ -1,11 +1,16 @@
 /* list of the available custom !bangs */
+var browserUI = require('api-wrapper.js')
+var focusMode = require('focusMode.js')
+var searchbar = require('searchbar/searchbar.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+const formatRelativeDate = require('util/relativeDate.js')
 
 registerCustomBang({
   phrase: '!settings',
   snippet: l('viewSettings'),
   isAction: true,
   fn: function (text) {
-    navigate(tabs.getSelected(), 'file://' + __dirname + '/pages/settings/index.html')
+    browserUI.navigate(tabs.getSelected(), 'file://' + __dirname + '/pages/settings/index.html')
   }
 })
 
@@ -88,8 +93,8 @@ registerCustomBang({
   fn: function (text) {
 
     /* disabled in focus mode */
-    if (isFocusMode) {
-      showFocusModeError()
+    if (focusMode.enabled()) {
+      focusMode.warn()
       return
     }
 
@@ -104,7 +109,7 @@ registerCustomBang({
     var task = getTaskByNameOrNumber(text)
 
     if (task) {
-      switchToTask(task.id)
+      browserUI.switchToTask(task.id)
     }
   }
 })
@@ -116,15 +121,15 @@ registerCustomBang({
   fn: function (text) {
 
     /* disabled in focus mode */
-    if (isFocusMode) {
-      showFocusModeError()
+    if (focusMode.enabled()) {
+      focusMode.warn()
       return
     }
 
     taskOverlay.show()
 
     setTimeout(function () {
-      addTask()
+      browserUI.addTask()
       if (text) {
         currentTask.name = text
       }
@@ -139,8 +144,8 @@ registerCustomBang({
   fn: function (text) {
 
     /* disabled in focus mode */
-    if (isFocusMode) {
-      showFocusModeError()
+    if (focusMode.enabled()) {
+      focusMode.warn()
       return
     }
 
@@ -167,8 +172,8 @@ registerCustomBang({
     }
 
     taskOverlay.show()
-    switchToTask(newTask.id)
-    switchToTab(currentTab.id)
+    browserUI.switchToTask(newTask.id)
+    browserUI.switchToTab(currentTab.id)
 
     setTimeout(function () {
       taskOverlay.hide()
@@ -184,11 +189,19 @@ registerCustomBang({
     bookmarks.searchPlaces(text, function (results) {
       empty(container)
 
+      var lastRelativeDate = '' // used to generate headings
+
       results.sort(function (a, b) {
         // order by last visit
         return b.lastVisit - a.lastVisit
       }).forEach(function (result) {
-        container.appendChild(createSearchbarItem({
+        var thisRelativeDate = formatRelativeDate(result.lastVisit)
+        if (thisRelativeDate !== lastRelativeDate) {
+          var heading = searchbarUtils.createHeading({text: thisRelativeDate})
+          container.appendChild(heading)
+          lastRelativeDate = thisRelativeDate
+        }
+        container.appendChild(searchbarUtils.createItem({
           title: result.title,
           icon: 'fa-star',
           secondaryText: result.url,
@@ -206,8 +219,57 @@ registerCustomBang({
     }
     bookmarks.searchPlaces(text, function (results) {
       if (results.length !== 0) {
-        openURLFromSearchbar(results[0].url, null)
+        results = results.sort(function (a, b) {
+          return b.lastVisit - a.lastVisit
+        })
+        searchbar.openURL(results[0].url, null)
       }
     }, {searchBookmarks: true})
+  }
+})
+
+registerCustomBang({
+  phrase: '!history',
+  snippet: l('searchHistory'),
+  isAction: false,
+  showSuggestions: function (text, input, event, container) {
+    bookmarks.searchPlaces(text, function (results) {
+      empty(container)
+
+      var lastRelativeDate = '' // used to generate headings
+
+      results.sort(function (a, b) {
+        // order by last visit
+        return b.lastVisit - a.lastVisit
+      }).slice(0, 250).forEach(function (result) {
+        var thisRelativeDate = formatRelativeDate(result.lastVisit)
+        if (thisRelativeDate !== lastRelativeDate) {
+          var heading = searchbarUtils.createHeading({text: thisRelativeDate})
+          container.appendChild(heading)
+          lastRelativeDate = thisRelativeDate
+        }
+        container.appendChild(searchbarUtils.createItem({
+          title: result.title,
+          secondaryText: result.url,
+          url: result.url,
+          delete: function () {
+            bookmarks.deleteHistory(result.url)
+          }
+        }))
+      })
+    }, {limit: Infinity})
+  },
+  fn: function (text) {
+    if (!text) {
+      return
+    }
+    bookmarks.searchPlaces(text, function (results) {
+      if (results.length !== 0) {
+        results = results.sort(function (a, b) {
+          return b.lastVisit - a.lastVisit
+        })
+        searchbar.openURL(results[0].url, null)
+      }
+    }, {limit: Infinity})
   }
 })

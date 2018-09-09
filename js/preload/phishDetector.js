@@ -292,6 +292,7 @@ function checkPhishingStatus () {
 
     if (href.indexOf('javascript:') === 0) {
       javascriptLinksFound++
+      continue
     }
 
     aTest.href = links[i].href
@@ -417,7 +418,7 @@ function checkPhishingStatus () {
   debugPhishing('status ' + phishingScore)
 
   if (phishingScore > minPhishingScore) {
-    ipc.sendToHost('phishingDetected', phishingDebugMessages)
+    ipc.send('phishingDetected', phishingDebugMessages)
   }
 
   var scanEnd = performance.now()

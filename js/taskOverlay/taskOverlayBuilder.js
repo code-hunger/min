@@ -1,3 +1,6 @@
+var browserUI = require('api-wrapper.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+
 function removeTabFromOverlay (tabId, task) {
   task.tabs.destroy(tabId)
   webviews.destroy(tabId)
@@ -9,7 +12,7 @@ function removeTabFromOverlay (tabId, task) {
     // remove the task element from the overlay
     getTaskContainer(task.id).remove()
     // close the task
-    closeTask(task.id)
+    browserUI.closeTask(task.id)
   }
 }
 
@@ -48,7 +51,7 @@ var TaskOverlayBuilder = {
 
         deleteButton.addEventListener('click', function (e) {
           container.remove()
-          closeTask(task.id)
+          browserUI.closeTask(task.id)
         })
         return deleteButton
       },
@@ -88,9 +91,9 @@ var TaskOverlayBuilder = {
 
     tab: {
       element: function (tabContainer, task, tab) {
-        var el = createSearchbarItem({
+        var el = searchbarUtils.createItem({
           title: tab.title || l('newTabLabel'),
-          secondaryText: urlParser.removeProtocol(tab.url),
+          secondaryText: urlParser.basicURL(tab.url),
           classList: ['task-tab-item'],
           delete: function () {
             removeTabFromOverlay(tab.id, task)
@@ -100,8 +103,8 @@ var TaskOverlayBuilder = {
         el.setAttribute('data-tab', tab.id)
 
         el.addEventListener('click', function (e) {
-          switchToTask(this.parentNode.getAttribute('data-task'))
-          switchToTab(this.getAttribute('data-tab'))
+          browserUI.switchToTask(this.parentNode.getAttribute('data-task'))
+          browserUI.switchToTab(this.getAttribute('data-tab'))
 
           taskOverlay.hide()
         })
@@ -128,11 +131,7 @@ var TaskOverlayBuilder = {
 
       closeButton: function (taskTabElement) {
         var closeTabButton = document.createElement('button')
-        closeTabButton.className = 'closeTab'
-
-        var closeTabIcon = document.createElement('i')
-        closeTabIcon.className = 'fa fa-close'
-        closeTabButton.appendChild(closeTabIcon)
+        closeTabButton.className = 'closeTab fa fa-close'
 
         closeTabButton.addEventListener('click', function (e) {
           var tabId = taskTabElement.getAttribute('data-tab')
@@ -152,8 +151,7 @@ var TaskOverlayBuilder = {
     }
 
   }
-  // extend with other helper functions?
+// extend with other helper functions?
 }
 
 window.task_container_build_func = TaskOverlayBuilder.create.task.container.bind(TaskOverlayBuilder.create.task)
-

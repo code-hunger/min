@@ -61,9 +61,8 @@ body.mac:not(.fullscreen) #searchbar {
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
-.searchbar-item .title.title-block {
-	display: block;
-	max-width: 100%;
+.searchbar-item .title.wide {
+	max-width: 70%;
 }
 .searchbar-item i,
 .searchbar-item .icon-image {
@@ -80,6 +79,13 @@ body.mac:not(.fullscreen) #searchbar {
 }
 .dark-theme .theme-background-color .searchbar-item i {
 	opacity: 0.33;
+}
+
+.searchbar-heading {
+	font-weight: normal;
+	padding: 0.75em 0.55em 0.25em 0.55em;
+	opacity: 0.7;
+	cursor: default;
 }
 
 /* move the icon when there isn't room to the left of the searchbar */

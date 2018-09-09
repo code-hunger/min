@@ -1,3 +1,11 @@
+var searchbar = require('searchbar/searchbar.js')
+var searchbarPlugins = require('searchbar/searchbarPlugins.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+
+function removeTags (text) {
+  return text.replace(/<.*?>/g, '')
+}
+
 function showSearchbarInstantAnswers (text, input, event, container) {
   // only make requests to the DDG api if DDG is set as the search engine
   if (currentSearchEngine.name !== 'DuckDuckGo') {
@@ -6,7 +14,7 @@ function showSearchbarInstantAnswers (text, input, event, container) {
 
   // don't make a request if the searchbar has already closed
 
-  if (!currentSearchbarInput) {
+  if (!searchbar.associatedInput) {
     return
   }
 
@@ -32,7 +40,7 @@ function showSearchbarInstantAnswers (text, input, event, container) {
         data.image = res.Image
       }
 
-      var item = createSearchbarItem(data)
+      var item = searchbarUtils.createItem(data)
 
     // show a disambiguation
     } else if (res.RelatedTopics) {
@@ -43,7 +51,7 @@ function showSearchbarInstantAnswers (text, input, event, container) {
         // the text starts with the entity name, remove it
         var desc = item.Text.replace(entityName, '')
 
-        var item = createSearchbarItem({
+        var item = searchbarUtils.createItem({
           title: entityName,
           descriptionBlock: desc,
           url: item.FirstURL
@@ -52,31 +60,31 @@ function showSearchbarInstantAnswers (text, input, event, container) {
         container.appendChild(item)
       })
 
-      searchbarResultCount += Math.min(res.RelatedTopics.length, 3)
+      searchbarPlugins.addResults(Math.min(res.RelatedTopics.length, 3))
     }
 
     if (item) {
       // answers are more relevant, they should be displayed at the top
       if (res.Answer) {
-        setTopAnswer('instantAnswers', item)
+        searchbarPlugins.setTopAnswer('instantAnswers', item)
       } else {
         container.appendChild(item)
       }
     }
 
     // suggested site links
-    if (searchbarResultCount < 4 && res.Results && res.Results[0] && res.Results[0].FirstURL) {
+    if (searchbarPlugins.getResultCount() < 4 && res.Results && res.Results[0] && res.Results[0].FirstURL) {
       var url = res.Results[0].FirstURL
 
       var data = {
         icon: 'fa-globe',
-        title: urlParser.removeProtocol(url).replace(trailingSlashRegex, ''),
+        title: urlParser.basicURL(url),
         secondaryText: l('suggestedSite'),
         url: url,
         classList: ['ddg-answer']
       }
 
-      var item = createSearchbarItem(data)
+      var item = searchbarUtils.createItem(data)
 
       container.appendChild(item)
     }
@@ -86,7 +94,7 @@ function showSearchbarInstantAnswers (text, input, event, container) {
     var entitiesWithLocations = ['location', 'country', 'u.s. state', 'protected area']
 
     if (entitiesWithLocations.indexOf(res.Entity) !== -1) {
-      var item = createSearchbarItem({
+      var item = searchbarUtils.createItem({
         icon: 'fa-search',
         title: res.Heading,
         secondaryText: l('searchWith').replace('%s', 'OpenStreetMap'),
@@ -101,19 +109,19 @@ function showSearchbarInstantAnswers (text, input, event, container) {
   })
 }
 
-registerSearchbarPlugin('instantAnswers', {
+searchbarPlugins.register('instantAnswers', {
   index: 3,
   trigger: function (text) {
     return text.length > 3 && !urlParser.isURLMissingProtocol(text) && !tabs.get(tabs.getSelected()).private
   },
-  showResults: debounce(showSearchbarInstantAnswers, 400)
+  showResults: debounce(showSearchbarInstantAnswers, 300)
 })
 
 // custom instant answers
 
 var instantAnswers = {
   color_code: function (searchText, answer) {
-    var item = createSearchbarItem({
+    var item = searchbarUtils.createItem({
       title: searchText,
       descriptionBlock: answer.replace(/\n/g, ' · ').replace(/\s~\s/g, ' · '),
       attribution: ddgAttribution
@@ -136,7 +144,7 @@ var instantAnswers = {
   figlet: function (searchText, answer) {
     var formattedAnswer = removeTags(answer).replace('Font: standard', '')
 
-    var item = createSearchbarItem({
+    var item = searchbarUtils.createItem({
       descriptionBlock: formattedAnswer,
       attribution: ddgAttribution
     })
@@ -170,7 +178,7 @@ var instantAnswers = {
       var descriptionBlock = l('DDGAnswerSubtitle')
     }
 
-    var item = createSearchbarItem({
+    var item = searchbarUtils.createItem({
       title: title,
       descriptionBlock: descriptionBlock,
       attribution: ddgAttribution

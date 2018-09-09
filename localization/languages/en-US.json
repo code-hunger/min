@@ -35,7 +35,9 @@
         "createTask": "Create a Task",
         "moveToTask": "Move this tab to a task",
         "searchBookmarks": "Search bookmarks",
+        "searchHistory": "Search history",
         /* navbar */
+        "openMenu": "Open menu", //application menu button on windows
         "enterReaderView": "Enter reader view",
         "exitReaderView": "Exit reader view",
         "emptyReadingListTitle": "Your reading list is empty",
@@ -58,6 +60,15 @@
         "closeDialog": "OK", //used as a label for the button that closes the dialog
         "focusModeExplanation1": "In focus mode, all tabs except the current one are hidden, and you can't create new tabs.",
         "focusModeExplanation2": "You can leave focus mode by unchecking \"focus mode\" in the view menu.",
+        /* relative dates */
+        "timeRangeJustNow": "Just now",
+        "timeRangeMinutes": "A few minutes ago",
+        "timeRangeHour": "In the past hour",
+        "timeRangeDay": "In the past day",
+        "timeRangeWeek": "In the past week",
+        "timeRangeMonth": "In the past month",
+        "timeRangeYear": "In the past year",
+        "timeRangeLongerAgo": "Longer ago",
         /* pages/crash/index.html */
         "crashErrorTitle": "Something went wrong.",
         "crashErrorSubtitle": "A problem has occurred while displaying this page.",
@@ -110,6 +121,7 @@
         "settingsSearchEngineHeading": "Search Engine",
         "settingsDefaultSearchEngine": "Choose a default search engine:",
         "settingsDDGExplanation": "Set DuckDuckGo as the default search engine to see instant answers in the searchbar.",
+        "customSearchEngineDescription": "Replace the search term with %s",
         "settingsKeyboardShortcutsHeading": "Keyboard Shortcuts",
         "settingsKeyboardShortcutsHelp": "Use commas to separate multiple shortcuts.",
         /* app menu */
@@ -134,6 +146,8 @@
         "appMenuFullScreen": "Full Screen", //on some platforms, this string is replaced with one built-in to the OS
         "appMenuFocusMode": "Focus Mode",
         "appMenuReadingList": "Reading List",
+        "appMenuBookmarks": "Bookmarks",
+        "appMenuHistory": "History",
         "appMenuDeveloper": "Developer",
         "appMenuReloadBrowser": "Reload Browser",
         "appMenuInspectBrowser": "Inspect Browser",

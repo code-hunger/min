@@ -1,3 +1,6 @@
+var browserUI = require('api-wrapper.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+
 var readerView = {
   readerURL: 'file://' + __dirname + '/reader/index.html',
   getReaderURL: function (url) {
@@ -46,13 +49,13 @@ var readerView = {
     }
   },
   enter: function (tabId) {
-    navigate(tabId, readerView.readerURL + '?url=' + encodeURIComponent(tabs.get(tabId).url))
+    browserUI.navigate(tabId, readerView.readerURL + '?url=' + encodeURIComponent(tabs.get(tabId).url))
     tabs.update(tabId, {
       isReaderView: true
     })
   },
   exit: function (tabId) {
-    navigate(tabId, decodeURIComponent(tabs.get(tabId).url.split('?url=')[1]))
+    browserUI.navigate(tabId, decodeURIComponent(tabs.get(tabId).url.split('?url=')[1]))
     tabs.update(tabId, {
       isReaderView: false
     })
@@ -62,7 +65,7 @@ var readerView = {
       empty(container)
 
       if (articles.length === 0) {
-        var item = createSearchbarItem({
+        var item = searchbarUtils.createItem({
           title: l('emptyReadingListTitle'),
           descriptionBlock: l('emptyReadingListSubtitle')
         })
@@ -86,17 +89,13 @@ var readerView = {
           }
         }
 
-        var item = createSearchbarItem({
+        var item = searchbarUtils.createItem({
           title: article.article.title,
           descriptionBlock: article.article.excerpt,
-          url: article.url,
+          url: readerView.getReaderURL(article.url),
           delete: function (el) {
             db.readingList.where('url').equals(el.getAttribute('data-url')).delete()
           }
-        })
-
-        item.addEventListener('click', function (e) {
-          openURLFromSearchbar(readerView.getReaderURL(article.url), e)
         })
 
         if (article.visitCount > 5 || (article.extraData.scrollPosition > 0 && article.extraData.articleScrollLength - article.extraData.scrollPosition < 1000)) { // the article has been visited frequently, or the scroll position is at the bottom
@@ -123,22 +122,22 @@ registerCustomBang({
 // update the reader button on page load
 
 webviews.bindEvent('did-finish-load', function (e) {
-  var tab = this.getAttribute('data-tab')
-  var url = this.getAttribute('src')
+  var tab = webviews.getTabFromContents(this)
+  webviews.callAsync(tab, 'getURL', null, function (url) {
+    if (url.indexOf(readerView.readerURL) === 0) {
+      tabs.update(tab, {
+        isReaderView: true,
+        readerable: false // assume the new page can't be readered, we'll get another message if it can
+      })
+    } else {
+      tabs.update(tab, {
+        isReaderView: false,
+        readerable: false
+      })
+    }
 
-  if (url.indexOf(readerView.readerURL) === 0) {
-    tabs.update(tab, {
-      isReaderView: true,
-      readerable: false // assume the new page can't be readered, we'll get another message if it can
-    })
-  } else {
-    tabs.update(tab, {
-      isReaderView: false,
-      readerable: false
-    })
-  }
-
-  readerView.updateButton(tab)
+    readerView.updateButton(tab)
+  })
 })
 
 webviews.bindIPC('canReader', function (webview, tab) {

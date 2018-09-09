@@ -65,20 +65,21 @@
   }
 
   /**
-   * Parses the domain string using the passed in separator and
-   * fills in options.
+   * Parses the domain string and fills in options.
    */
 
-  function parseDomains (input, separator, options) {
-    var domains = input.split(separator)
-    options.domains = domains.filter(function (domain) {
-      return domain[0] !== '~'
-    })
-    var skipDomains = domains.filter(function (domain) {
-      return domain[0] === '~'
-    }).map(function (domain) {
-      return domain.substring(1)
-    })
+  function parseDomains (input, options) {
+    var domains = input.split('|')
+    var matchDomains = []
+    var skipDomains = []
+    for (var i = 0; i < domains.length; i++) {
+      if (domains[i][0] === '~') {
+        skipDomains.push(domains[i].substring(1))
+      } else {
+        matchDomains.push(domains[i])
+      }
+    }
+    options.domains = matchDomains
     if (skipDomains.length !== 0) {
       options.skipDomains = skipDomains
     }
@@ -95,7 +96,7 @@
     input.split(',').forEach(function (option) {
       if (option.startsWith('domain=')) {
         var domainString = option.split('=')[1].trim()
-        parseDomains(domainString, '|', output)
+        parseDomains(domainString, output)
         hasValidOptions = true
       } else {
 
@@ -274,12 +275,17 @@
    * Similar to str1.indexOf(filter, startingPos) but with
    * extra consideration to some ABP filter rules like ^.
    */
+  var filterArrCache = {}
   function indexOfFilter (input, filter, startingPos) {
     if (filter.indexOf('^') == -1) { // no separator characters, no need to do the rest of the parsing
       return input.indexOf(filter, startingPos)
     }
-
-    var filterParts = filter.split('^')
+    if (filterArrCache[filter]) {
+      var filterParts = filterArrCache[filter]
+    } else {
+      var filterParts = filter.split('^')
+      filterArrCache[filter] = filterParts
+    }
     var index = startingPos,
       beginIndex = -1,
       prefixedSeparatorChar = false
@@ -357,6 +363,8 @@
           return false
         }
       }
+    } else if (filterOptions.domains || filterOptions.skipDomains) {
+      return false
     }
 
     return true

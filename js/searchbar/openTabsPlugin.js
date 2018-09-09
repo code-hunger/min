@@ -1,3 +1,7 @@
+var browserUI = require('api-wrapper.js')
+var searchbarPlugins = require('searchbar/searchbarPlugins.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+
 var stringScore = require('string_score')
 
 var searchOpenTabs = function (text, input, event, container) {
@@ -13,7 +17,7 @@ var searchOpenTabs = function (text, input, event, container) {
         return
       }
 
-      var tabUrl = urlParser.removeProtocol(tab.url) // don't search protocols
+      var tabUrl = urlParser.basicURL(tab.url) // don't search protocols
 
       var exactMatch = tab.title.toLowerCase().indexOf(searchText) !== -1 || tabUrl.toLowerCase().indexOf(searchText) !== -1
       var fuzzyTitleScore = tab.title.substring(0, 50).score(text, 0.5)
@@ -47,7 +51,7 @@ var searchOpenTabs = function (text, input, event, container) {
     var data = {
       icon: 'fa-external-link-square',
       title: match.tab.title,
-      secondaryText: urlParser.removeProtocol(match.tab.url).replace(trailingSlashRegex, '')
+      secondaryText: urlParser.basicURL(match.tab.url)
     }
 
     if (match.task.id !== currentTask.id) {
@@ -55,29 +59,29 @@ var searchOpenTabs = function (text, input, event, container) {
       data.metadata = [taskName]
     }
 
-    var item = createSearchbarItem(data)
+    var item = searchbarUtils.createItem(data)
 
     item.addEventListener('click', function () {
       // if we created a new tab but are switching away from it, destroy the current (empty) tab
       var currentTabUrl = tabs.get(tabs.getSelected()).url
       if (!currentTabUrl || currentTabUrl === 'about:blank') {
-        closeTab(tabs.getSelected())
+        browserUI.closeTab(tabs.getSelected())
       }
 
       if (match.task.id !== currentTask.id) {
-        switchToTask(match.task.id)
+        browserUI.switchToTask(match.task.id)
       }
 
-      switchToTab(match.tab.id)
+      browserUI.switchToTab(match.tab.id)
     })
 
     container.appendChild(item)
   })
 
-  searchbarResultCount += finalMatches.length
+  searchbarPlugins.addResults(finalMatches.length)
 }
 
-registerSearchbarPlugin('openTabs', {
+searchbarPlugins.register('openTabs', {
   index: 4,
   trigger: function (text) {
     return text.length > 2

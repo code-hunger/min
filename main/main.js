@@ -4,6 +4,8 @@ const path = require('path')
 const app = electron.app // Module to control application life.
 const protocol = electron.protocol // Module to control protocol handling
 const BrowserWindow = electron.BrowserWindow // Module to create native browser window.
+const webContents = electron.webContents
+const session = electron.session
 const ipc = electron.ipcMain
 
 var userDataPath = app.getPath('userData')
@@ -17,7 +19,7 @@ var appIsReady = false
 
 var saveWindowBounds = function () {
   if (mainWindow) {
-    fs.writeFile(path.join(userDataPath, 'windowBounds.json'), JSON.stringify(mainWindow.getBounds()))
+    fs.writeFileSync(path.join(userDataPath, 'windowBounds.json'), JSON.stringify(mainWindow.getBounds()))
   }
 }
 
@@ -28,7 +30,7 @@ function sendIPCToWindow (window, action, data) {
       mainWindow.webContents.send(action, data || {})
     })
   } else {
-    mainWindow.webContents.send(action, data || {})
+      mainWindow.webContents.send(action, data || {})
   }
 }
 
@@ -82,7 +84,8 @@ function createWindowWithBounds (bounds, shouldMaximize) {
     minHeight: 350,
     titleBarStyle: 'hiddenInset',
     icon: __dirname + '/icons/icon256.png',
-    frame: process.platform !== 'win32'
+    frame: process.platform !== 'win32',
+    backgroundColor: '#fff', // the value of this is ignored, but setting it seems to work around https://github.com/electron/electron/issues/10559
   })
 
   // and load the index.html of the app.
@@ -117,7 +120,7 @@ function createWindowWithBounds (bounds, shouldMaximize) {
       event.preventDefault()
       sendIPCToWindow(mainWindow, 'openPDF', {
         url: itemURL,
-        webContentsId: webContents.getId(),
+        webContentsId: webContents.id,
         event: event,
         item: item // as of electron 0.35.1, this is an empty object
       })
@@ -143,6 +146,14 @@ function createWindowWithBounds (bounds, shouldMaximize) {
 
   mainWindow.on('leave-full-screen', function () {
     sendIPCToWindow(mainWindow, 'leave-full-screen')
+  })
+
+  mainWindow.on('enter-html-full-screen', function () {
+    sendIPCToWindow(mainWindow, 'enter-html-full-screen')
+  })
+
+  mainWindow.on('leave-html-full-screen', function () {
+    sendIPCToWindow(mainWindow, 'leave-html-full-screen')
   })
 
   mainWindow.on('app-command', function (e, command) {
@@ -178,6 +189,8 @@ app.on('window-all-closed', function () {
 // initialization and is ready to create browser windows.
 app.on('ready', function () {
   appIsReady = true
+
+  app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required') // allow autoplay by default
 
   createWindow(function () {
     mainWindow.webContents.on('did-finish-load', function () {
@@ -224,6 +237,10 @@ app.on('activate', function ( /* e, hasVisibleWindows */) {
   if (!mainWindow && appIsReady) { // sometimes, the event will be triggered before the app is ready, and creating new windows will fail
     createWindow()
   }
+})
+
+ipc.on('focusMainWebContents', function () {
+  mainWindow.webContents.focus()
 })
 
 ipc.on('showSecondaryMenu', function (event, data) {
@@ -379,14 +396,28 @@ function createAppMenu () {
           type: 'separator'
         },
         {
-          label: l('appMenuFullScreen'),
-          accelerator: (function () {
-            if (process.platform == 'darwin')
-              return 'Ctrl+Command+F'
-            else
-              return 'F11'
-          })(),
-          role: 'togglefullscreen'
+          label: l('appMenuReadingList'),
+          accelerator: undefined,
+          click: function (item, window) {
+            sendIPCToWindow(window, 'showReadingList')
+          }
+        },
+        {
+          label: l('appMenuBookmarks'),
+          accelerator: undefined,
+          click: function (item, window) {
+            sendIPCToWindow(window, 'showBookmarks')
+          }
+        },
+        {
+          label: l('appMenuHistory'),
+          accelerator: undefined,
+          click: function (item, window) {
+            sendIPCToWindow(window, 'showHistory')
+          }
+        },
+        {
+          type: 'separator'
         },
         {
           label: l('appMenuFocusMode'),
@@ -406,11 +437,14 @@ function createAppMenu () {
           }
         },
         {
-          label: l('appMenuReadingList'),
-          accelerator: undefined,
-          click: function (item, window) {
-            sendIPCToWindow(window, 'showReadingList')
-          }
+          label: l('appMenuFullScreen'),
+          accelerator: (function () {
+            if (process.platform == 'darwin')
+              return 'Ctrl+Command+F'
+            else
+              return 'F11'
+          })(),
+          role: 'togglefullscreen'
         }
       ]
     },
@@ -459,7 +493,19 @@ function createAppMenu () {
         {
           label: l('appMenuClose'),
           accelerator: 'CmdOrCtrl+W',
-          role: 'close'
+          click: function (item, window) {
+            if (!mainWindow.isFocused()) {
+              // a devtools window is focused, close it
+              var contents = webContents.getAllWebContents()
+              for (var i = 0; i < contents.length; i++) {
+                if (contents[i].isDevToolsFocused()) {
+                  contents[i].closeDevTools()
+                  return
+                }
+              }
+            }
+          // otherwise, this event will be handled in the main window
+          }
         }
       ]
     },

@@ -1,3 +1,6 @@
+var browserUI = require('api-wrapper.js')
+var focusMode = require('focusMode.js')
+
 var taskContainer = document.getElementById('task-area')
 var taskSwitcherButton = document.getElementById('switch-task-button')
 var addTaskButton = document.getElementById('add-task')
@@ -12,7 +15,7 @@ taskSwitcherButton.addEventListener('click', function () {
 })
 
 addTaskButton.addEventListener('click', function (e) {
-  switchToTask(tasks.add())
+  browserUI.switchToTask(tasks.add())
   taskOverlay.hide()
 })
 
@@ -22,7 +25,7 @@ taskOverlayNavbar.addEventListener('click', function () {
 
 var dragula = require('dragula')
 
-var taskOverlay = {
+window.taskOverlay = {
   overlayElement: document.getElementById('task-overlay'),
   isShown: false,
   tabDragula: dragula({
@@ -46,10 +49,12 @@ var taskOverlay = {
   }),
   show: function () {
     /* disabled in focus mode */
-    if (isFocusMode) {
-      showFocusModeError()
+    if (focusMode.enabled()) {
+      focusMode.warn()
       return
     }
+
+    webviews.requestPlaceholder('taskOverlay')
 
     document.body.classList.add('task-overlay-is-shown')
 
@@ -91,8 +96,9 @@ var taskOverlay = {
       setTimeout(function () {
         if (!taskOverlay.isShown) {
           empty(taskContainer)
+          webviews.hidePlaceholder('taskOverlay')
         }
-      }, 200)
+      }, 150)
 
       this.tabDragula.containers = []
 
@@ -106,7 +112,7 @@ var taskOverlay = {
         })[0]
 
         if (mostRecentTab) {
-          switchToTab(mostRecentTab.id)
+          browserUI.switchToTab(mostRecentTab.id)
         }
       }
 
@@ -153,7 +159,7 @@ taskOverlay.tabDragula.on('drop', function (el, target, source, sibling) { // se
   // if the old task has no tabs left in it, destroy it
 
   if (previousTask.tabs.length === 0) {
-    closeTask(previousTask.id)
+    browserUI.closeTask(previousTask.id)
     getTaskContainer(previousTask.id).remove()
   }
 
@@ -167,6 +173,9 @@ taskOverlay.tabDragula.on('drop', function (el, target, source, sibling) { // se
 
   // insert the tab at the correct spot
   newTask.tabs.splice(newIdx, 0, oldTab)
+
+  // update the visible tabs
+  tabBar.rerenderAll()
 })
 
 /* rearrange tasks when they are dropped */

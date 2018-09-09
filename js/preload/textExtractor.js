@@ -4,7 +4,7 @@ function extractPageText (doc, win) {
   var maybeNodes = [].slice.call(doc.body.childNodes)
   var textNodes = []
 
-  var ignore = 'link, style, script, noscript, .visually-hidden, .visuallyhidden, [role=presentation], [hidden], [style*="display:none"], .ad, .dialog, .modal'
+  var ignore = 'link, style, script, noscript, .hidden, .visually-hidden, .visuallyhidden, [role=presentation], [hidden], [style*="display:none"], [style*="display: none"], .ad, .dialog, .modal, select, svg'
 
   while(maybeNodes.length) {
     var node = maybeNodes[0]
@@ -163,7 +163,7 @@ function getPageData () {
 
 function checkDoc () {
   if (document.readyState === 'complete') {
-    ipc.sendToHost('pageData', getPageData())
+    ipc.send('pageData', getPageData())
   } else {
     setTimeout(checkDoc, 500)
   }

@@ -1,4 +1,15 @@
-function autocomplete (input, text, strings) {
+var urlParser = require('util/urlParser.js')
+
+function autocomplete (input, strings) {
+  // if there is text after the selection, we can never autocomplete
+  if (input.selectionEnd !== input.value.length) {
+    return {
+      valid: false
+    }
+  }
+
+  var text = input.value.substring(0, input.selectionStart)
+
   for (var i = 0; i < strings.length; i++) {
     // check if the item can be autocompleted
     if (strings[i].toLowerCase().indexOf(text.toLowerCase()) === 0) {
@@ -19,8 +30,6 @@ function autocomplete (input, text, strings) {
 // autocompletes based on a result item
 // returns: 1 - the exact URL was autocompleted, 0 - the domain was autocompleted, -1: nothing was autocompleted
 function autocompleteURL (item, input) {
-  var text = getValue(input)
-
   var url = new URL(item.url)
   var hostname = url.hostname
 
@@ -33,12 +42,12 @@ function autocompleteURL (item, input) {
     // then try the whole URL
     urlParser.prettyURL(item.url),
     // then try the URL with querystring
-    urlParser.removeProtocol(item.url),
+    urlParser.basicURL(item.url),
     // then just try the URL with protocol
     item.url
   ]
 
-  var autocompleteResult = autocomplete(input, text, possibleAutocompletions)
+  var autocompleteResult = autocomplete(input, possibleAutocompletions)
 
   if (!autocompleteResult.valid) {
     return -1
@@ -48,3 +57,5 @@ function autocompleteURL (item, input) {
     return 1
   }
 }
+
+module.exports = {autocomplete, autocompleteURL}

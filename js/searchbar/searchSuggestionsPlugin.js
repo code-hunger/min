@@ -1,3 +1,7 @@
+var searchbar = require('searchbar/searchbar.js')
+var searchbarPlugins = require('searchbar/searchbarPlugins.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+
 var ddgAttribution = l('resultsFromDDG')
 
 function showSearchSuggestions (text, input, event, container) {
@@ -6,7 +10,13 @@ function showSearchSuggestions (text, input, event, container) {
     return
   }
 
-  if (searchbarResultCount > 3) {
+  // if the search text is a custom bang, we should never show suggestions
+  if (getCustomBang(text)) {
+    empty(container)
+    return
+  }
+
+  if (searchbarPlugins.getResultCount() > 3) {
     empty(container)
     return
   }
@@ -23,7 +33,8 @@ function showSearchSuggestions (text, input, event, container) {
       if (results) {
         results.slice(0, 3).forEach(function (result) {
           var data = {
-            title: result.phrase
+            title: result.phrase,
+            classList: ['iadata-onfocus']
           }
 
           if (urlParser.isURL(result.phrase) || urlParser.isURLMissingProtocol(result.phrase)) { // website suggestions
@@ -32,23 +43,23 @@ function showSearchSuggestions (text, input, event, container) {
             data.icon = 'fa-search'
           }
 
-          var item = createSearchbarItem(data)
+          var item = searchbarUtils.createItem(data)
 
           item.addEventListener('click', function (e) {
-            openURLFromSearchbar(result.phrase, e)
+            searchbar.openURL(result.phrase, e)
           })
 
           container.appendChild(item)
         })
       }
-      searchbarResultCount += results.length
+      searchbarPlugins.addResults(results.length)
     })
 }
 
-registerSearchbarPlugin('searchSuggestions', {
+searchbarPlugins.register('searchSuggestions', {
   index: 4,
   trigger: function (text) {
-    return !!text && text.indexOf('!') !== 0 && !tabs.get(tabs.getSelected()).private
+    return !!text && (text.indexOf('!') !== 0 || text.trim().indexOf(' ') !== -1) && !tabs.get(tabs.getSelected()).private
   },
-  showResults: debounce(showSearchSuggestions, 200)
+  showResults: debounce(showSearchSuggestions, 150)
 })

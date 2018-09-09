@@ -12,7 +12,7 @@
         "openImageInNewPrivateTab": "Kép Megnyitása Új Privát Fülbe",
         "saveImageAs": "Kép Mentése Másként",
         "searchWith": "Keresés %s keresővel", //%s will be replaced with the name of the current search engine
-        "copyLink": "Hibatkozás Másolás",
+        "copyLink": "Hivatkozás Másolás",
         "copy": "Másol", //this is a verb (as in "copy the currently-selected text")
         "paste": "Illeszt",
         "goBack": "Visza lép",
@@ -28,14 +28,16 @@
         these are some of the items that show up when you press ! in the searchbar.
         Each one of these strings describes what the command will do when you run it. */
         "viewSettings": "Beálitások Megtekintése",
-        "takeScreenshot": "Képernyő kép készités",
         "viewReadingList": "Olvasási lista Megtekintése",
+        "takeScreenshot": "Képernyő kép készités",
         "clearHistory": "Összes Történet törlés",
         "switchToTask": "Váltsz Feladatot",
         "createTask": "Feladat létrehozás",
         "moveToTask": "Tedd a fül-t feladatba",
         "searchBookmarks": "Könyvjelző keresés",
+        "searchHistory": "Keresés Történet",
         /* navbar */
+        "openMenu": "Menu Megnyitása",
         "enterReaderView": "Lépj olvasó nézetbe",
         "exitReaderView": "Kilép olvasó nézetböl",
         "emptyReadingListTitle": "Olvasó Listája üres",
@@ -58,6 +60,15 @@
         "closeDialog": "OK", //used as a label for the button that closes the dialog
         "focusModeExplanation1": "Fókusz módba, csak a jelenlegi Fül jelenik meg, nem tud új Fült nyitni vagy másik Fülre lépni.",
         "focusModeExplanation2": "Elhagyhatod a \"focus mode\" a megtekintés menu kipipálásával.",
+        /* relative dates */
+        "timeRangeJustNow": "Idő intervalum, éppen most",
+        "timeRangeMinutes": "Idő intervalum, Perc",
+        "timeRangeHour": "Idő intervalum, Óra",
+        "timeRangeDay": "Idő intervalum, Nap",
+        "timeRangeWeek": "Idő intervalum, Hét",
+        "timeRangeMonth": "Idő intervalum, Hónap",
+        "timeRangeYear": "Idő intervalum, Év",
+        "timeRangeLongerAgo": "Idő intervalum, még régebi",
         /* pages/crash/index.html */
         "crashErrorTitle": "Valami hiba történt.",
         "crashErrorSubtitle": "Egy hiba lépet fel az oldal menyitásákor.",
@@ -74,7 +85,7 @@
         "offlineErrorMessage": "Kapcsolódjon az internethez és probálja újra.",
         "genericConnectionFail": "Min nem tudta betölteni az oldalt.",
         "sslTimeErrorMessage": "Min nem tudott kapcsolódni biztonságosan az oldalhos. Kérem elenőrize a számitógép óra beálitásait.",
-        "addressInvalidTitle": "A cim hibás.",
+        "addressInvalidTitle": "A cím hibás.",
         "genericError": "Hiba lépet fel",
         /* pages/phishing/index.html */
         "phishingErrorTitle": "Ez az óldal ártalmas lehet.",
@@ -82,7 +93,7 @@
         "phishingErrorVisitAnyway": "Eltekint és oldal betöltése",
         "phishingErrorLeave": "Hagya el az oldalt",
         /* multiple instances alert */
-        "multipleInstancesErrorMessage": null, // missing translation
+        "multipleInstancesErrorMessage": "Hiba lépett fel, kérlek zárd be az összes böngészőt ablakot, és initsd újra a Min böngészőt",
         /* pages/sessionRestoreError/index.html */
         "sessionRestoreErrorTitle": "Egy hiba lépet fel",
         "sessionRestoreErrorExplanation": "A mentet fült nem sikerült helyre álitani.",
@@ -103,14 +114,16 @@
         "settingsAppearanceHeading": "Megjelenés",
         "settingsDarkModeToggle": "Kapcsolja be a sotét nézetett",
         "settingsHistoryButtonToggle": "Vissza gomb bekapcsolása",
-        "settingsAdditionalFeaturesHeading": null, //missing translation
+        "settingsAdditionalFeaturesHeading": "További beálitások",
         "settingsSwipeNavigationToggle": "Kapcsolja be a swipe Navigációt előre és hátra az oldalakal.",
+        "settingsUserscriptsToggle": "Felhasználói Szkriptek",
+        "settingsUserscriptsExplanation": "Felhasználói Szkriptek magyarázat",
         "settingsSearchEngineHeading": "Kereső Motor",
         "settingsDefaultSearchEngine": "Válasza ki az Alap kereső Motorját:",
         "settingsDDGExplanation": "Állitsa be a DuckDuckGo kereső motort hogy lássa a válaszokat a kereső sorba.",
+        "customSearchEngineDescription": null, //missing translation
         "settingsKeyboardShortcutsHeading": "Billentjüzet kombinációk",
         "settingsKeyboardShortcutsHelp": "Használj , tobb kombináció megadásához.",
-
         /* app menu */
         "appMenuFile": "Fajl",
         "appMenuNewTab": "Új Fül",
@@ -133,6 +146,8 @@
         "appMenuFullScreen": "Teljes képernyő", //on some platforms, this string is replaced with one built-in to the OS
         "appMenuFocusMode": "Fókusz Mode",
         "appMenuReadingList": "Olvasó lista",
+        "appMenuBookmarks": "Könyvjelzők",
+        "appMenuHistory": "Régeben látogatott oldalak",
         "appMenuDeveloper": "Fejlesző",
         "appMenuReloadBrowser": "Böngésző újra töltése",
         "appMenuInspectBrowser": "Böngésző elenőrzés",

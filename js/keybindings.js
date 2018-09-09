@@ -1,5 +1,18 @@
 /* defines keybindings that aren't in the menu (so they aren't defined by menu.js). For items in the menu, also handles ipc messages */
 
+/*
+There are three possible ways that keybindings can be handled.
+ Shortcuts that appear in the menubar are registered in main.js, and send IPC messages to the window (which are handled by this file)
+Shortcuts that don't appear in the menubar are registered in this file, using defineShortcut(). 
+ - If the browser UI is focused, these are handled by Mousetrap.
+  - If a BrowserView is focused, these are handled by the before-input-event listener.
+  */
+
+const menuBarVisibility = require('menuBarVisibility.js')
+var searchbar = require('searchbar/searchbar.js')
+var browserUI = require('api-wrapper.js')
+var focusMode = require('focusMode.js')
+
 ipc.on('zoomIn', function () {
   webviewGestures.zoomWebviewIn(tabs.getSelected())
 })
@@ -33,23 +46,31 @@ ipc.on('showReadingList', function () {
   tabBar.enterEditMode(tabs.getSelected(), '!readinglist ')
 })
 
+ipc.on('showBookmarks', function () {
+  tabBar.enterEditMode(tabs.getSelected(), '!bookmarks ')
+})
+
+ipc.on('showHistory', function () {
+  tabBar.enterEditMode(tabs.getSelected(), '!history ')
+})
+
 ipc.on('addTab', function (e, data) {
   /* new tabs can't be created in focus mode */
-  if (isFocusMode) {
-    showFocusModeError()
+  if (focusMode.enabled()) {
+    focusMode.warn()
     return
   }
 
   // if opening a URL (instead of adding an empty tab), and only an empty tab is open, navigate the current tab rather than creating another one
   if (tabs.isEmpty() && data.url) {
-    navigate(tabs.getSelected(), data.url)
+    browserUI.navigate(tabs.getSelected(), data.url)
   } else {
     var newIndex = tabs.getIndex(tabs.getSelected()) + 1
     var newTab = tabs.add({
       url: data.url || ''
     }, newIndex)
 
-    addTab(newTab, {
+    browserUI.addTab(newTab, {
       enterEditMode: !data.url // only enter edit mode if the new tab is about:blank
     })
   }
@@ -82,13 +103,13 @@ ipc.on('saveCurrentPage', function () {
 
 function addPrivateTab () {
   /* new tabs can't be created in focus mode */
-  if (isFocusMode) {
-    showFocusModeError()
+  if (focusMode.enabled()) {
+    focusMode.warn()
     return
   }
 
   if (tabs.isEmpty()) {
-    destroyTab(tabs.getAtIndex(0).id)
+    browserUI.destroyTab(tabs.getAtIndex(0).id)
   }
 
   var newIndex = tabs.getIndex(tabs.getSelected()) + 1
@@ -97,19 +118,19 @@ function addPrivateTab () {
     url: 'about:blank',
     private: true
   }, newIndex)
-  addTab(privateTab)
+  browserUI.addTab(privateTab)
 }
 
 ipc.on('addPrivateTab', addPrivateTab)
 
 ipc.on('addTask', function () {
   /* new tasks can't be created in focus mode */
-  if (isFocusMode) {
-    showFocusModeError()
+  if (focusMode.enabled()) {
+    focusMode.warn()
     return
   }
 
-  addTask()
+  browserUI.addTask()
   taskOverlay.show()
   setTimeout(function () {
     taskOverlay.hide()
@@ -131,8 +152,20 @@ ipc.on('goForward', function () {
 
 var menuBarShortcuts = ['mod+t', 'shift+mod+p', 'mod+n'] // shortcuts that are already used for menu bar items
 
-function defineShortcut (keyMapName, fn) {
-  Mousetrap.bind(keyMap[keyMapName], function (e, combo) {
+var shortcutsList = []
+
+function defineShortcut (keysOrKeyMapName, fn) {
+  if (keysOrKeyMapName.keys) {
+    var binding = keysOrKeyMapName.keys
+  } else {
+    var binding = keyMap[keysOrKeyMapName]
+  }
+
+  if (typeof binding === 'string') {
+    binding = [binding]
+  }
+
+  var shortcutCallback = function (e, combo) {
     // these shortcuts are already used by menu bar items, so also using them here would result in actions happening twice
     if (menuBarShortcuts.indexOf(combo) !== -1) {
       return
@@ -141,7 +174,7 @@ function defineShortcut (keyMapName, fn) {
     // also block single-letter shortcuts when an input field is focused, so that it's still possible to type in an input
     if (!combo.includes('+') || combo === 'mod+left' || combo === 'mod+right') {
       var webview = webviews.get(tabs.getSelected())
-      if (!webview.src) {
+      if (!tabs.get(tabs.getSelected()).url || !webview.isFocused()) {
         fn(e, combo)
       } else {
         webview.executeJavaScript('document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA"', function (isInputFocused) {
@@ -154,7 +187,17 @@ function defineShortcut (keyMapName, fn) {
       // other shortcuts can run immediately
       fn(e, combo)
     }
+  }
+
+  binding.forEach(function (keys) {
+    shortcutsList.push({
+      combo: keys,
+      keys: keys.split('+'),
+      fn: shortcutCallback
+    })
   })
+
+  Mousetrap.bind(binding, shortcutCallback)
 }
 
 settings.get('keyMap', function (keyMapSettings) {
@@ -171,18 +214,12 @@ settings.get('keyMap', function (keyMapSettings) {
   })
 
   defineShortcut('closeTab', function (e) {
-    // prevent mod+w from closing the window
-    e.preventDefault()
-    e.stopImmediatePropagation()
-
-    closeTab(tabs.getSelected())
-
-    return false
+    browserUI.closeTab(tabs.getSelected())
   })
 
   defineShortcut('restoreTab', function (e) {
-    if (isFocusMode) {
-      showFocusModeError()
+    if (focusMode.enabled()) {
+      focusMode.warn()
       return
     }
 
@@ -194,12 +231,10 @@ settings.get('keyMap', function (keyMapSettings) {
     }
 
     if (tabs.isEmpty()) {
-      destroyTab(tabs.getAtIndex(0).id)
+      browserUI.destroyTab(tabs.getAtIndex(0).id)
     }
 
-    addTab(tabs.add(restoredTab, tabs.getIndex(tabs.getSelected()) + 1), {
-      focus: false,
-      leaveEditMode: true,
+    browserUI.addTab(tabs.add(restoredTab, tabs.getIndex(tabs.getSelected()) + 1), {
       enterEditMode: false
     })
   })
@@ -213,46 +248,40 @@ settings.get('keyMap', function (keyMapSettings) {
 
   for (var i = 1; i < 9; i++) {
     (function (i) {
-      Mousetrap.bind('mod+' + i, function (e) {
+      defineShortcut({keys: 'mod+' + i}, function (e) {
         var currentIndex = tabs.getIndex(tabs.getSelected())
         var newTab = tabs.getAtIndex(currentIndex + i) || tabs.getAtIndex(currentIndex - i)
         if (newTab) {
-          switchToTab(newTab.id)
+          browserUI.switchToTab(newTab.id)
         }
       })
 
-      Mousetrap.bind('shift+mod+' + i, function (e) {
+      defineShortcut({keys: 'shift+mod+' + i}, function (e) {
         var currentIndex = tabs.getIndex(tabs.getSelected())
         var newTab = tabs.getAtIndex(currentIndex - i) || tabs.getAtIndex(currentIndex + i)
         if (newTab) {
-          switchToTab(newTab.id)
+          browserUI.switchToTab(newTab.id)
         }
       })
     })(i)
   }
 
   defineShortcut('gotoLastTab', function (e) {
-    switchToTab(tabs.getAtIndex(tabs.count() - 1).id)
+    browserUI.switchToTab(tabs.getAtIndex(tabs.count() - 1).id)
   })
 
   defineShortcut('gotoFirstTab', function (e) {
-    switchToTab(tabs.getAtIndex(0).id)
+    browserUI.switchToTab(tabs.getAtIndex(0).id)
   })
 
-  Mousetrap.bind('esc', function (e) {
+  defineShortcut({keys: 'esc'}, function (e) {
     taskOverlay.hide()
     tabBar.leaveEditMode()
 
-    var webview = webviews.get(tabs.getSelected())
-
     // exit full screen mode
-    if (webview.executeJavaScript) {
-      webview.executeJavaScript('if(document.webkitIsFullScreen){document.webkitExitFullscreen()}')
-    }
+    webviews.callAsync(tabs.getSelected(), 'executeJavaScript', 'if(document.webkitIsFullScreen){document.webkitExitFullscreen()}')
 
-    if (document.activeElement !== webview) {
-      webview.focus()
-    }
+    webviews.callAsync(tabs.getSelected(), 'focus')
   })
 
   defineShortcut('toggleReaderView', function () {
@@ -280,9 +309,9 @@ settings.get('keyMap', function (keyMapSettings) {
     var previousTab = tabs.getAtIndex(currentIndex - 1)
 
     if (previousTab) {
-      switchToTab(previousTab.id)
+      browserUI.switchToTab(previousTab.id)
     } else {
-      switchToTab(tabs.getAtIndex(tabs.count() - 1).id)
+      browserUI.switchToTab(tabs.getAtIndex(tabs.count() - 1).id)
     }
   })
 
@@ -291,9 +320,9 @@ settings.get('keyMap', function (keyMapSettings) {
     var nextTab = tabs.getAtIndex(currentIndex + 1)
 
     if (nextTab) {
-      switchToTab(nextTab.id)
+      browserUI.switchToTab(nextTab.id)
     } else {
-      switchToTab(tabs.getAtIndex(0).id)
+      browserUI.switchToTab(tabs.getAtIndex(0).id)
     }
   })
 
@@ -307,9 +336,9 @@ settings.get('keyMap', function (keyMapSettings) {
     }).indexOf(currentTask.id)
 
     if (tasks.get()[currentTaskIdx + 1]) {
-      switchToTask(tasks.get()[currentTaskIdx + 1].id)
+      browserUI.switchToTask(tasks.get()[currentTaskIdx + 1].id)
     } else {
-      switchToTask(tasks.get()[0].id)
+      browserUI.switchToTask(tasks.get()[0].id)
     }
 
     taskOverlay.show()
@@ -328,9 +357,9 @@ settings.get('keyMap', function (keyMapSettings) {
     }).indexOf(currentTask.id)
 
     if (tasks.get()[currentTaskIdx - 1]) {
-      switchToTask(tasks.get()[currentTaskIdx - 1].id)
+      browserUI.switchToTask(tasks.get()[currentTaskIdx - 1].id)
     } else {
-      switchToTask(tasks.get()[tasks.get().length - 1].id)
+      browserUI.switchToTask(tasks.get()[tasks.get().length - 1].id)
     }
 
     taskOverlay.show()
@@ -344,10 +373,10 @@ settings.get('keyMap', function (keyMapSettings) {
   defineShortcut('closeAllTabs', function (d) { // destroys all current tabs, and creates a new, empty tab. Kind of like creating a new window, except the old window disappears.
     var tset = tabs.get()
     for (var i = 0; i < tset.length; i++) {
-      destroyTab(tset[i].id)
+      browserUI.destroyTab(tset[i].id)
     }
 
-    addTab() // create a new, blank tab
+    browserUI.addTab() // create a new, blank tab
   })
 
   defineShortcut('toggleTasks', function () {
@@ -366,9 +395,12 @@ settings.get('keyMap', function (keyMapSettings) {
     // pressing mod+r twice in a row reloads the whole browser
     if (time - lastReload < 500) {
       window.location.reload()
-    } else {
+    } else if (tabs.get(tabs.getSelected()).url.startsWith('file://')) {
       // the webview.reload() method can't be used because if the webview is displaying an error page, we want to reload the original page rather than show the error page again
-      navigate(tabs.getSelected(), tabs.get(tabs.getSelected()).url)
+      browserUI.navigate(tabs.getSelected(), tabs.get(tabs.getSelected()).url)
+    } else {
+      // this can't be an error page, use the normal reload method
+      webviews.callAsync(tabs.getSelected(), 'reload')
     }
 
     lastReload = time
@@ -376,22 +408,22 @@ settings.get('keyMap', function (keyMapSettings) {
 
   // mod+enter navigates to searchbar URL + ".com"
   defineShortcut('completeSearchbar', function () {
-    if (currentSearchbarInput) { // if the searchbar is open
-      var value = currentSearchbarInput.value
+    if (searchbar.associatedInput) { // if the searchbar is open
+      var value = searchbar.associatedInput.value
 
       tabBar.leaveEditMode()
 
       // if the text is already a URL, navigate to that page
       if (urlParser.isURLMissingProtocol(value)) {
-        navigate(tabs.getSelected(), value)
+        browserUI.navigate(tabs.getSelected(), value)
       } else {
-        navigate(tabs.getSelected(), urlParser.parse(value + '.com'))
+        browserUI.navigate(tabs.getSelected(), urlParser.parse(value + '.com'))
       }
     }
   })
 
   defineShortcut('showAndHideMenuBar', function () {
-    toggleMenuBar()
+    menuBarVisibility.toggleMenuBar()
   })
 
   defineShortcut('followLink', function () {
@@ -407,5 +439,52 @@ document.body.addEventListener('keydown', function (e) {
     try {
       webviews.get(tabs.getSelected()).reloadIgnoringCache()
     } catch (e) {}
+  }
+})
+
+webviews.bindEvent('before-input-event', function (e, input) {
+  var expectedKeys = 1
+  if (input.alt) {
+    expectedKeys++
+  }
+  if (input.shift) {
+    expectedKeys++
+  }
+  if (input.control) {
+    expectedKeys++
+  }
+  if (input.meta) {
+    expectedKeys++
+  }
+
+  if (input.type === 'keyDown') {
+    shortcutsList.forEach(function (shortcut) {
+      var matches = true
+      var matchedKeys = 0
+      shortcut.keys.forEach(function (key) {
+        if (! (
+          key === input.key.toLowerCase() ||
+          key === input.code.replace('Digit', '') ||
+          (key === 'left' && input.key === 'ArrowLeft') ||
+          (key === 'right' && input.key === 'ArrowRight') ||
+          (key === 'up' && input.key === 'ArrowUp') ||
+          (key === 'down' && input.key === 'ArrowDown') ||
+          (key === 'alt' && input.alt) ||
+          (key === 'shift' && input.shift) ||
+          (key === 'ctrl' && input.control) ||
+          (key === 'mod' && window.platformType === 'mac' && input.meta) ||
+          (key === 'mod' && window.platformType !== 'mac' && input.control)
+          )
+        ) {
+          matches = false
+        } else {
+          matchedKeys++
+        }
+      })
+
+      if (matches && matchedKeys === expectedKeys) {
+        shortcut.fn(null, shortcut.combo)
+      }
+    })
   }
 })

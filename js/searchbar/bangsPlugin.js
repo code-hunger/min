@@ -1,3 +1,7 @@
+var searchbar = require('searchbar/searchbar.js')
+var searchbarUtils = require('searchbar/searchbarUtils.js')
+var searchbarPlugins = require('searchbar/searchbarPlugins.js')
+
 // format is {phrase, snippet, score, icon, fn, isCustom, isAction} to match https://ac.duckduckgo.com/ac?q=!
 
 // isAction describes whether the !bang is an action (like "open preferences"), or a place to search (like "search reading list items")
@@ -87,13 +91,13 @@ function showBangSearchResults (results, input, event, container) {
       secondaryText: result.phrase
     }
 
-    var item = createSearchbarItem(data)
+    var item = searchbarUtils.createItem(data)
 
     item.addEventListener('click', function (e) {
 
       // if the item is an action, clicking on it should immediately trigger it instead of prompting for additional text
       if (result.isAction && result.fn) {
-        openURLFromSearchbar(result.phrase, e)
+        searchbar.openURL(result.phrase, e)
         return
       }
 
@@ -124,9 +128,11 @@ function getBangSearchResults (text, input, event, container) {
 
     if (bang && bang.showSuggestions) {
       bang.showSuggestions(text.replace(bang.phrase, '').trimLeft(), input, event, container)
+      return
+    } else if (text.trim().indexOf(' ') !== -1) {
+      empty(container)
+      return
     }
-
-    return
   }
 
   // otherwise search for bangs
@@ -149,10 +155,24 @@ function getBangSearchResults (text, input, event, container) {
   }
 }
 
-registerSearchbarPlugin('bangs', {
+searchbarPlugins.register('bangs', {
   index: 1,
   trigger: function (text) {
     return !!text && text.indexOf('!') === 0
   },
   showResults: debounce(getBangSearchResults, 100)
+})
+
+searchbarPlugins.registerURLHandler({
+  trigger: function (url) {
+    return url.indexOf('!') === 0 && getCustomBang(url)
+  },
+  action: function (url) {
+    var bang = getCustomBang(url)
+
+    if (bang) {
+      tabBar.leaveEditMode()
+      bang.fn(url.replace(bang.phrase, '').trimLeft())
+    }
+  }
 })

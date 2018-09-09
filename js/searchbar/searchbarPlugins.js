@@ -1,31 +1,16 @@
+var searchbar = document.getElementById('searchbar')
+
 var searchbarPlugins = [] // format is {name, container, trigger, showResults}
-var searchbarResultCount = 0
-var hasAutocompleted = false
+var URLHandlers = [] // format is {trigger, action}
+var resultCount = 0
 var topAnswerArea = searchbar.querySelector('.top-answer-area')
 
 // empties all containers in the searchbar
-function clearSearchbar () {
+function clearAll () {
   empty(topAnswerArea)
   for (var i = 0; i < searchbarPlugins.length; i++) {
     empty(searchbarPlugins[i].container)
   }
-}
-
-function setTopAnswer (pluginName, item) {
-  empty(topAnswerArea)
-  if (item) {
-    item.setAttribute('data-plugin', pluginName)
-    topAnswerArea.appendChild(item)
-  }
-}
-
-function getSearchbarContainer (pluginName) {
-  for (var i = 0; i < searchbarPlugins.length; i++) {
-    if (searchbarPlugins[i].name === pluginName) {
-      return searchbarPlugins[i].container
-    }
-  }
-  return null
 }
 
 function getTopAnswer (pluginName) {
@@ -37,7 +22,24 @@ function getTopAnswer (pluginName) {
   }
 }
 
-function registerSearchbarPlugin (name, object) {
+function setTopAnswer (pluginName, item) {
+  empty(topAnswerArea)
+  if (item) {
+    item.setAttribute('data-plugin', pluginName)
+    topAnswerArea.appendChild(item)
+  }
+}
+
+function getContainer (pluginName) {
+  for (var i = 0; i < searchbarPlugins.length; i++) {
+    if (searchbarPlugins[i].name === pluginName) {
+      return searchbarPlugins[i].container
+    }
+  }
+  return null
+}
+
+function register (name, object) {
   // add the container
   var container = document.createElement('div')
   container.classList.add('searchbar-plugin-container')
@@ -52,12 +54,11 @@ function registerSearchbarPlugin (name, object) {
   })
 }
 
-function runPlugins (text, input, event) {
-  searchbarResultCount = 0
-  hasAutocompleted = false
+function run (text, input, event) {
+  resultCount = 0
 
   for (var i = 0; i < searchbarPlugins.length; i++) {
-    if ((!searchbarPlugins[i].trigger || searchbarPlugins[i].trigger(text))) {
+    if ( (!searchbarPlugins[i].trigger || searchbarPlugins[i].trigger(text))) {
       searchbarPlugins[i].showResults(text, input, event, searchbarPlugins[i].container)
     } else {
       empty(searchbarPlugins[i].container)
@@ -71,3 +72,30 @@ function runPlugins (text, input, event) {
     }
   }
 }
+
+function registerURLHandler (object) {
+  URLHandlers.push({
+    trigger: object.trigger,
+    action: object.action
+  })
+}
+
+function runURLHandlers (text) {
+  for (var i = 0; i < URLHandlers.length; i++) {
+    if (URLHandlers[i].trigger(text)) {
+      URLHandlers[i].action(text)
+      return true
+    }
+  }
+  return false
+}
+
+function getResultCount () {
+  return resultCount
+}
+
+function addResults (ct) {
+  resultCount += ct
+}
+
+module.exports = {clearAll, getTopAnswer, setTopAnswer, getContainer, register, run, registerURLHandler, runURLHandlers, getResultCount, addResults}

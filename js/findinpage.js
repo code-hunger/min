@@ -7,6 +7,8 @@ var findinpage = {
   endButton: document.getElementById('findinpage-end'),
   activeWebview: null,
   start: function (options) {
+    webviews.releaseFocus()
+
     findinpage.input.placeholder = l('searchInPage')
 
     findinpage.activeWebview = webviews.get(tabs.getSelected())
@@ -89,15 +91,15 @@ findinpage.input.addEventListener('keypress', function (e) {
 findinpage.previous.addEventListener('click', findinpage.goToPrev)
 findinpage.next.addEventListener('click', findinpage.goToNext)
 
-webviews.bindEvent('found-in-page', function (e) {
-  if (e.result.matches !== undefined) {
+webviews.bindEvent('found-in-page', function (e, data) {
+  if (data.matches !== undefined) {
     var text
-    if (e.result.matches === 1) {
+    if (data.matches === 1) {
       text = l('findMatchesSingular')
     } else {
       text = l('findMatchesPlural')
     }
 
-    findinpage.counter.textContent = text.replace('%i', e.result.activeMatchOrdinal).replace('%t', e.result.matches)
+    findinpage.counter.textContent = text.replace('%i', data.activeMatchOrdinal).replace('%t', data.matches)
   }
 })

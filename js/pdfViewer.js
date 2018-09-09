@@ -1,5 +1,7 @@
 /* handles viewing pdf files using pdf.js. Recieves events from main.js will-download */
 
+var browserUI = require('api-wrapper.js')
+
 var PDFViewer = {
   url: {
     base: 'file://' + __dirname + '/pages/pdfViewer/index.html',
@@ -43,8 +45,8 @@ var PDFViewer = {
 
     tabs.get().forEach(function (tab) {
       var webview = webviews.get(tab.id)
-      if (webview && webview.getWebContents().getId() === data.webContentsId) {
-        navigate(tab.id, PDFurl)
+      if (webview && webview.id === data.webContentsId) {
+        browserUI.navigate(tab.id, PDFurl)
       }
     })
   }
