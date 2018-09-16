@@ -1,6 +1,7 @@
 var browserUI = require('api-wrapper.js')
 const previewCache = require('previewCache.js')
 var getView = remote.getGlobal('getView')
+var urlParser = require('util/urlParser.js')
 
 /* implements selecting webviews, switching between them, and creating new ones. */
 
@@ -76,9 +77,9 @@ function captureCurrentTab (options) {
 }
 
 function updateBackButton () {
-  if(!tabs.get(tabs.getSelected()).url) {
-    goBackButton.disabled = true;
-    return;
+  if (!tabs.get(tabs.getSelected()).url) {
+    goBackButton.disabled = true
+    return
   }
   webviews.callAsync(tabs.getSelected(), 'canGoBack', null, function (canGoBack) {
     goBackButton.disabled = !canGoBack
@@ -342,8 +343,12 @@ webviews.bindEvent('new-window', function (e, url, frameName, disposition) {
 }, {preventDefault: true})
 
 window.addEventListener('resize', throttle(function () {
+  if (webviews.placeholderRequests.length > 0) {
+    // can't set view bounds if the view is hidden
+    return
+  }
   ipc.send('setBounds', {id: webviews.selectedId, bounds: getViewBounds()})
-}, 100))
+}, 75))
 
 ipc.on('enter-html-full-screen', function () {
   windowIsFullscreen = true
@@ -408,6 +413,10 @@ webviews.bindIPC('close-window', function (webview, tabId, args) {
 })
 
 ipc.on('view-event', function (e, args) {
+  if (!webviews.tabViewMap[args.id]) {
+    // the view could have been destroyed between when the event was occured and when it was recieved in the UI process, see https://github.com/minbrowser/min/issues/604#issuecomment-419653437
+    return
+  }
   webviews.events.forEach(function (ev) {
     if (ev.event === args.name) {
       ev.fn.apply(webviews.tabContentsMap[args.id], [e].concat(args.args))
@@ -420,10 +429,14 @@ ipc.on('async-call-result', function (e, args) {
   delete webviews.asyncCallbacks[args.callId]
 })
 
-ipc.on('view-ipc', function (e, data) {
+ipc.on('view-ipc', function (e, args) {
+  if (!webviews.tabViewMap[args.id]) {
+    // the view could have been destroyed between when the event was occured and when it was recieved in the UI process, see https://github.com/minbrowser/min/issues/604#issuecomment-419653437
+    return
+  }
   webviews.IPCEvents.forEach(function (item) {
-    if (item.name === data.name) {
-      item.fn(webviews.tabContentsMap[data.id], data.id, [data.data])
+    if (item.name === args.name) {
+      item.fn(webviews.tabContentsMap[args.id], args.id, [args.data])
     }
   })
 })

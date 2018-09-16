@@ -1,7 +1,7 @@
 var searchbarPlugins = require('searchbar/searchbarPlugins.js')
 var searchbarUtils = require('searchbar/searchbarUtils.js')
-
-// hosts are parsed in util/urlParser
+var urlParser = require('util/urlParser.js')
+const hosts = require('util/hosts.js')
 
 function showHostsSuggestions (text, input, event, container) {
   empty(container)
